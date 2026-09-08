@@ -1,10 +1,21 @@
 import type {
   ChampionListResult,
   ChampionSummary,
+  DDragonChampionDetailRaw,
+  DDragonChampionPassiveRaw,
   DDragonChampionRaw,
+  DDragonChampionSpellRaw,
 } from "../types/ddragon.js";
-import type { ChampionScalingProfile, FlatStatMap } from "../types/build.js";
+import type {
+  AbilityDamageType,
+  AbilitySlot,
+  ChampionAbility,
+  ChampionAbilityKit,
+  ChampionScalingProfile,
+  FlatStatMap,
+} from "../types/build.js";
 import { DDragonClient } from "./ddragonClient.js";
+import { stripHtml } from "./itemService.js";
 
 export const DEFAULT_LEVEL_RANGE = { min: 1, max: 20 } as const;
 
@@ -69,6 +80,108 @@ export function toScalingProfile(
   };
 }
 
+const SPELL_SLOTS: AbilitySlot[] = ["Q", "W", "E", "R"];
+
+const DAMAGE_TAG_MAP: Array<{ tag: RegExp; type: AbilityDamageType }> = [
+  { tag: /physicalDamage/i, type: "physical" },
+  { tag: /magicDamage/i, type: "magic" },
+  { tag: /trueDamage/i, type: "true" },
+  { tag: /<(?:healing|heal)\b/i, type: "heal" },
+  { tag: /shield/i, type: "shield" },
+];
+
+export function detectDamageTypes(
+  tooltip: string,
+  description: string,
+): AbilityDamageType[] {
+  const haystack = `${tooltip}\n${description}`;
+  const found: AbilityDamageType[] = [];
+  for (const { tag, type } of DAMAGE_TAG_MAP) {
+    if (tag.test(haystack) && !found.includes(type)) {
+      found.push(type);
+    }
+  }
+  return found.length > 0 ? found : ["unknown"];
+}
+
+export function toAbilityFromPassive(
+  passive: DDragonChampionPassiveRaw,
+  _version: string,
+  imageUrl: string,
+): ChampionAbility {
+  return {
+    slot: "P",
+    id: "passive",
+    name: passive.name,
+    description: stripHtml(passive.description ?? ""),
+    maxRank: 1,
+    cooldowns: [],
+    cooldownBurn: "",
+    costs: [],
+    costBurn: "",
+    costType: "",
+    rangeBurn: "",
+    imageUrl,
+    damageTypes: detectDamageTypes("", passive.description ?? ""),
+  };
+}
+
+export function toAbilityFromSpell(
+  spell: DDragonChampionSpellRaw,
+  slot: AbilitySlot,
+  _version: string,
+  imageUrl: string,
+): ChampionAbility {
+  return {
+    slot,
+    id: spell.id,
+    name: spell.name,
+    description: stripHtml(spell.description ?? ""),
+    maxRank: spell.maxrank ?? spell.cooldown?.length ?? 5,
+    cooldowns: Array.isArray(spell.cooldown) ? spell.cooldown : [],
+    cooldownBurn: spell.cooldownBurn ?? "",
+    costs: Array.isArray(spell.cost) ? spell.cost : [],
+    costBurn: spell.costBurn ?? "",
+    costType: spell.costType ?? spell.resource ?? "",
+    rangeBurn: spell.rangeBurn ?? "",
+    imageUrl,
+    damageTypes: detectDamageTypes(
+      spell.tooltip ?? "",
+      spell.description ?? "",
+    ),
+  };
+}
+
+export function toAbilityKit(
+  champion: DDragonChampionDetailRaw,
+  version: string,
+  client: Pick<DDragonClient, "spellImageUrl" | "passiveImageUrl">,
+): ChampionAbilityKit {
+  const passive = toAbilityFromPassive(
+    champion.passive,
+    version,
+    client.passiveImageUrl(version, champion.passive.image.full),
+  );
+
+  const spells = (champion.spells ?? []).slice(0, 4).map((spell, index) =>
+    toAbilityFromSpell(
+      spell,
+      SPELL_SLOTS[index] ?? "Q",
+      version,
+      client.spellImageUrl(version, spell.image.full),
+    ),
+  );
+
+  return {
+    championId: champion.id,
+    name: champion.name,
+    version,
+    passive,
+    spells,
+    abilities: [passive, ...spells],
+  };
+}
+
 export class ChampionService {
   constructor(private readonly client: DDragonClient) {}
 
@@ -126,6 +239,32 @@ export class ChampionService {
       entry.version,
       this.client.imageUrl(entry.version, entry.champion.image.full),
     );
+  }
+
+  async getChampionAbilities(
+    id: string,
+    version?: string,
+  ): Promise<ChampionAbilityKit | undefined> {
+    const listEntry = await this.findChampion(id, version);
+    if (!listEntry) return undefined;
+
+    try {
+      const detail = await this.client.getChampionDetail(
+        listEntry.champion.id,
+        listEntry.version,
+      );
+      return toAbilityKit(detail.champion, detail.version, this.client);
+    } catch (err) {
+      if (
+        err &&
+        typeof err === "object" &&
+        "statusCode" in err &&
+        (err as { statusCode: number }).statusCode === 404
+      ) {
+        return undefined;
+      }
+      throw err;
+    }
   }
 
   private async findChampion(

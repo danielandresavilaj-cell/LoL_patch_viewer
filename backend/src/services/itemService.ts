@@ -75,6 +75,49 @@ export interface ListItemsQuery {
   tags?: string[];
   purchasable?: boolean;
   version?: string;
+  /**
+   * Riot map id. Default `"11"` (Summoner's Rift).
+   * Pass `"all"` (or empty after parse) to disable map filtering.
+   */
+  mapId?: string | null;
+  /**
+   * When true (default), keep only canonical shop IDs (1–4 digits).
+   * Drops Arena (`22xxxx`), ARAM clones (`77xxxx`), support-variant (`32xxxx`), etc.
+   */
+  canonicalOnly?: boolean;
+}
+
+/** Summoner's Rift — default storefront for the build calculator. */
+export const DEFAULT_ITEM_MAP_ID = "11";
+
+/**
+ * Canonical SR shop entries use short numeric IDs (typically 4 digits).
+ * Longer IDs are mode-specific clones with divergent gold / recipes.
+ */
+export function isCanonicalItemId(id: string): boolean {
+  return /^\d{1,4}$/.test(id);
+}
+
+export function isItemOnMap(
+  item: { maps?: Record<string, boolean> },
+  mapId: string,
+): boolean {
+  if (!item.maps || Object.keys(item.maps).length === 0) {
+    return true;
+  }
+  return item.maps[mapId] === true;
+}
+
+export function shouldIncludeRawItem(
+  id: string,
+  item: DDragonItemRaw,
+  options: { mapId: string | null; canonicalOnly: boolean },
+): boolean {
+  if (item.hideFromAll === true) return false;
+  if (item.requiredChampion) return false;
+  if (options.canonicalOnly && !isCanonicalItemId(id)) return false;
+  if (options.mapId && !isItemOnMap(item, options.mapId)) return false;
+  return true;
 }
 
 /** Remove HTML tags and decode a few common entities. */
@@ -203,9 +246,15 @@ export class ItemService {
     const raw = await this.client.getItemList(query.version);
     const version = raw.version;
 
-    let items = Object.entries(raw.data).map(([id, item]) =>
-      this.toSummary(id, item, version),
-    );
+    const mapId =
+      query.mapId === undefined ? DEFAULT_ITEM_MAP_ID : query.mapId;
+    const canonicalOnly = query.canonicalOnly !== false;
+
+    let items = Object.entries(raw.data)
+      .filter(([id, item]) =>
+        shouldIncludeRawItem(id, item, { mapId, canonicalOnly }),
+      )
+      .map(([id, item]) => this.toSummary(id, item, version));
 
     if (query.purchasable === true) {
       items = items.filter((i) => i.gold.purchasable);
@@ -237,6 +286,8 @@ export class ItemService {
       version,
       count: items.length,
       items,
+      mapId,
+      canonicalOnly,
     };
   }
 

@@ -6,7 +6,27 @@ Monorepo TypeScript: Fastify BFF + React/Vite + motor matemático `@lol-viewer/s
 
 - Buscador de campeones y detalle con stats base
 - Parches / versiones vía Data Dragon
-- **Calculadora de Builds**: hasta 6 ítems, nivel 1–20, stats en tiempo real y CDR desde Ability Haste
+- **Habilidades (P/Q/W/E/R)** con CD efectivo según Ability Haste de la build
+- **Calculadora de Builds**: hasta 6 ítems (tienda SR canónica), nivel 1–20, stats en tiempo real y CDR
+
+## Catálogo de ítems
+
+Por defecto `GET /api/items` filtra:
+
+- Mapa **11** (Grieta del Invocador)
+- Solo IDs **canónicos** (≤4 dígitos)
+
+Así se excluyen clones de Arena (`22xxxx`), ARAM (`77xxxx`) y variantes de tienda (`32xxxx`) que duplican nombres (p. ej. Abyssal Mask) con oro incorrecto. Usa `?map=all&canonical=false` para el dump completo de Data Dragon.
+
+## Habilidades
+
+En el detalle del campeón se muestra el kit completo (`GET /api/champions/:id/abilities`). Los enfriamientos se recalculan en vivo con:
+
+```text
+CD_efectivo = CD_base × 100 / (100 + AH)
+```
+
+Data Dragon no publica ratios numéricos exactos de daño (tooltips con `{{ placeholders }}`); la UI muestra tipos de daño del tooltip y AD/AP/HP de la build como contexto.
 
 ## Calculadora de Builds
 
@@ -61,7 +81,8 @@ Flujo: browser → `localhost:8080` → nginx (`web`) → `api:3001` → Data Dr
 | GET | `/api/champions?q=&tags=&version=` | Lista filtrada |
 | GET | `/api/champions/:id?version=` | Detalle de campeón |
 | GET | `/api/champions/:id/scaling` | Base + growth para la calculadora |
-| GET | `/api/items?q=&tags=&purchasable=&version=` | Catálogo de ítems |
+| GET | `/api/champions/:id/abilities` | Pasiva + Q/W/E/R normalizadas |
+| GET | `/api/items?q=&tags=&purchasable=&version=&map=&canonical=` | Catálogo (default SR canónico) |
 | GET | `/api/items/:id` | Detalle de ítem |
 
 ## Desarrollo

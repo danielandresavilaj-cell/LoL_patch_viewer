@@ -315,6 +315,8 @@ describe("API routes", () => {
     expect(res.statusCode).toBe(200);
     const body = res.json();
     expect(body.version).toBe("16.17.1");
+    expect(body.mapId).toBe("11");
+    expect(body.canonicalOnly).toBe(true);
     expect(body.count).toBe(2);
     expect(body.items.map((i: { id: string }) => i.id).sort()).toEqual([
       "1001",
@@ -365,6 +367,143 @@ describe("API routes", () => {
       error: "Item '0000' not found",
       statusCode: 404,
     });
+  });
+
+  it("GET /api/champions/:id/abilities returns kit", async () => {
+    const detail = {
+      type: "champion",
+      format: "standAloneComplex",
+      version: "16.17.1",
+      data: {
+        Ahri: {
+          ...mockChampionList.data.Ahri,
+          passive: {
+            name: "Essence Theft",
+            description: "Heals Ahri",
+            image: {
+              full: "Ahri_P.png",
+              sprite: "passive0.png",
+              group: "passive",
+              x: 0,
+              y: 0,
+              w: 48,
+              h: 48,
+            },
+          },
+          spells: [
+            {
+              id: "AhriQ",
+              name: "Orb of Deception",
+              description: "Orb",
+              tooltip: "<magicDamage>x</magicDamage>",
+              maxrank: 5,
+              cooldown: [7, 7, 7, 7, 7],
+              cooldownBurn: "7",
+              cost: [55, 65, 75, 85, 95],
+              costBurn: "55/65/75/85/95",
+              rangeBurn: "970",
+              image: {
+                full: "AhriQ.png",
+                sprite: "spell0.png",
+                group: "spell",
+                x: 0,
+                y: 0,
+                w: 48,
+                h: 48,
+              },
+            },
+            {
+              id: "AhriW",
+              name: "Fox-Fire",
+              description: "W",
+              tooltip: "",
+              maxrank: 5,
+              cooldown: [9, 8, 7, 6, 5],
+              cooldownBurn: "9/8/7/6/5",
+              cost: [30],
+              costBurn: "30",
+              rangeBurn: "700",
+              image: {
+                full: "AhriW.png",
+                sprite: "spell0.png",
+                group: "spell",
+                x: 0,
+                y: 0,
+                w: 48,
+                h: 48,
+              },
+            },
+            {
+              id: "AhriE",
+              name: "Charm",
+              description: "E",
+              tooltip: "",
+              maxrank: 5,
+              cooldown: [12],
+              cooldownBurn: "12",
+              cost: [60],
+              costBurn: "60",
+              rangeBurn: "975",
+              image: {
+                full: "AhriE.png",
+                sprite: "spell0.png",
+                group: "spell",
+                x: 0,
+                y: 0,
+                w: 48,
+                h: 48,
+              },
+            },
+            {
+              id: "AhriR",
+              name: "Spirit Rush",
+              description: "R",
+              tooltip: "",
+              maxrank: 3,
+              cooldown: [130, 105, 80],
+              cooldownBurn: "130/105/80",
+              cost: [100],
+              costBurn: "100",
+              rangeBurn: "450",
+              image: {
+                full: "AhriR.png",
+                sprite: "spell0.png",
+                group: "spell",
+                x: 0,
+                y: 0,
+                w: 48,
+                h: 48,
+              },
+            },
+          ],
+        },
+      },
+    };
+
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(mockChampionList))
+      .mockResolvedValueOnce(jsonResponse(detail));
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/champions/Ahri/abilities?version=16.17.1",
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.championId).toBe("Ahri");
+    expect(body.abilities).toHaveLength(5);
+    expect(body.spells[0].slot).toBe("Q");
+    expect(body.spells[0].damageTypes).toContain("magic");
+  });
+
+  it("GET /api/champions/:id/abilities returns 404 for unknown", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(mockChampionList));
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/champions/Nope/abilities?version=16.17.1",
+    });
+    expect(res.statusCode).toBe(404);
   });
 
   it("maps upstream Data Dragon failures to 502", async () => {

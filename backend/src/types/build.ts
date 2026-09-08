@@ -75,6 +75,49 @@ export interface ItemListResult {
   version: string;
   count: number;
   items: ItemSummary[];
+  /** Mapa aplicado al filtrar (`11` = Summoner's Rift). `null` = sin filtro de mapa. */
+  mapId: string | null;
+  /** Si true, solo IDs de tienda canónicos (≤4 dígitos; sin clones Arena/ARAM/32xxxx). */
+  canonicalOnly: boolean;
+}
+
+export type AbilitySlot = "P" | "Q" | "W" | "E" | "R";
+
+export type AbilityDamageType =
+  | "physical"
+  | "magic"
+  | "true"
+  | "heal"
+  | "shield"
+  | "mixed"
+  | "unknown";
+
+export interface ChampionAbility {
+  slot: AbilitySlot;
+  id: string;
+  name: string;
+  description: string;
+  maxRank: number;
+  /** CD por rango (pasiva suele ser []). */
+  cooldowns: number[];
+  cooldownBurn: string;
+  costs: number[];
+  costBurn: string;
+  costType: string;
+  rangeBurn: string;
+  imageUrl: string;
+  /** Tipos de daño detectados en el tooltip HTML de Data Dragon. */
+  damageTypes: AbilityDamageType[];
+}
+
+export interface ChampionAbilityKit {
+  championId: string;
+  name: string;
+  version: string;
+  passive: ChampionAbility;
+  spells: ChampionAbility[];
+  /** Orden UI: P, Q, W, E, R */
+  abilities: ChampionAbility[];
 }
 
 /** Slot de build en el cliente (hasta 6). */

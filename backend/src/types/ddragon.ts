@@ -80,10 +80,64 @@ export interface DDragonItemRaw {
   tags: string[];
   maps?: Record<string, boolean>;
   stats: Record<string, number>;
+  inStore?: boolean;
+  hideFromAll?: boolean;
+  requiredChampion?: string;
+  requiredAlly?: string;
+  specialRecipe?: number;
 }
 
 export interface DDragonItemListResponse {
   type: string;
   version: string;
   data: Record<string, DDragonItemRaw>;
+}
+
+/** Spell / passive image block from champion detail JSON. */
+export interface DDragonSpellImage {
+  full: string;
+  sprite: string;
+  group: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface DDragonChampionSpellRaw {
+  id: string;
+  name: string;
+  description: string;
+  tooltip: string;
+  maxrank: number;
+  cooldown: number[];
+  cooldownBurn: string;
+  cost: number[];
+  costBurn: string;
+  costType?: string;
+  range?: number[];
+  rangeBurn?: string;
+  resource?: string;
+  leveltip?: { label: string[]; effect: string[] };
+  image: DDragonSpellImage;
+}
+
+export interface DDragonChampionPassiveRaw {
+  name: string;
+  description: string;
+  image: DDragonSpellImage;
+}
+
+/** Full champion payload (`champion/{id}.json`). */
+export interface DDragonChampionDetailRaw extends DDragonChampionRaw {
+  lore?: string;
+  spells: DDragonChampionSpellRaw[];
+  passive: DDragonChampionPassiveRaw;
+}
+
+export interface DDragonChampionDetailResponse {
+  type: string;
+  format: string;
+  version: string;
+  data: Record<string, DDragonChampionDetailRaw>;
 }

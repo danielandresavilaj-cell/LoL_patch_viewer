@@ -5,7 +5,11 @@ import {
   useState,
   type ChangeEvent,
 } from "react";
-import { computeBuildStats, type FlatStatKey } from "@lol-viewer/shared";
+import {
+  computeBuildStats,
+  type BuildComputedStats,
+  type FlatStatKey,
+} from "@lol-viewer/shared";
 import {
   fetchChampionScaling,
   fetchItems,
@@ -38,6 +42,7 @@ const STAT_ROWS: Array<{ key: FlatStatKey; label: string }> = [
 export interface BuildCalculatorProps {
   championId: string;
   version?: string;
+  onComputedChange?: (stats: BuildComputedStats | null) => void;
 }
 
 type Slot = ItemSummary | null;
@@ -51,6 +56,7 @@ function formatStat(value: number | undefined): string {
 export function BuildCalculator({
   championId,
   version,
+  onComputedChange,
 }: BuildCalculatorProps) {
   const [profile, setProfile] = useState<ChampionScalingProfile | null>(null);
   const [profileError, setProfileError] = useState<string | null>(null);
@@ -110,6 +116,8 @@ export function BuildCalculator({
       q: debouncedItemQuery || undefined,
       purchasable: true,
       version,
+      map: "11",
+      canonical: true,
     })
       .then((result) => {
         if (cancelled) return;
@@ -149,6 +157,10 @@ export function BuildCalculator({
       itemIds: equipped.map((item) => item.id),
     });
   }, [profile, deferredLevel, equipped]);
+
+  useEffect(() => {
+    onComputedChange?.(computed);
+  }, [computed, onComputedChange]);
 
   const minLevel = profile?.levelRange.min ?? 1;
   const maxLevel = profile?.levelRange.max ?? 20;

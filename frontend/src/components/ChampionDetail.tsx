@@ -1,5 +1,8 @@
+import { useCallback, useState } from "react";
+import type { BuildComputedStats } from "@lol-viewer/shared";
 import type { ChampionSummary } from "../types";
 import { BuildCalculator } from "./BuildCalculator";
+import { ChampionAbilities } from "./ChampionAbilities";
 import "./ChampionDetail.css";
 
 const STAT_LABELS: Array<{ key: string; label: string }> = [
@@ -22,6 +25,12 @@ export function ChampionDetail({
   champion,
   loading = false,
 }: ChampionDetailProps) {
+  const [buildStats, setBuildStats] = useState<BuildComputedStats | null>(null);
+
+  const handleComputed = useCallback((stats: BuildComputedStats | null) => {
+    setBuildStats(stats);
+  }, []);
+
   if (loading) {
     return (
       <section className="champion-detail" aria-busy="true">
@@ -103,7 +112,18 @@ export function ChampionDetail({
         })}
       </dl>
 
-      <BuildCalculator championId={champion.id} version={champion.version} />
+      <ChampionAbilities
+        championId={champion.id}
+        version={champion.version}
+        abilityHaste={buildStats?.abilityHaste ?? 0}
+        buildStats={buildStats?.total}
+      />
+
+      <BuildCalculator
+        championId={champion.id}
+        version={champion.version}
+        onComputedChange={handleComputed}
+      />
     </section>
   );
 }

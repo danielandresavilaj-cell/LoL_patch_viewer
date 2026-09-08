@@ -18,6 +18,25 @@ function parsePurchasable(raw?: string): boolean | undefined {
   return undefined;
 }
 
+function parseBooleanFlag(
+  raw: string | undefined,
+  defaultValue: boolean,
+): boolean {
+  if (raw === undefined || raw === "") return defaultValue;
+  const normalized = raw.trim().toLowerCase();
+  if (["true", "1", "yes"].includes(normalized)) return true;
+  if (["false", "0", "no"].includes(normalized)) return false;
+  return defaultValue;
+}
+
+/** `map=all` disables map filter; otherwise defaults to Summoner's Rift `11`. */
+function parseMapId(raw?: string): string | null {
+  if (raw === undefined || raw === "") return "11";
+  const normalized = raw.trim().toLowerCase();
+  if (normalized === "all" || normalized === "*") return null;
+  return raw.trim();
+}
+
 export async function itemsRoutes(
   app: FastifyInstance,
   itemService: ItemService,
@@ -28,6 +47,8 @@ export async function itemsRoutes(
       tags?: string;
       purchasable?: string;
       version?: string;
+      map?: string;
+      canonical?: string;
     };
   }>("/api/items", async (request) => {
     return itemService.listItems({
@@ -35,6 +56,8 @@ export async function itemsRoutes(
       tags: parseTags(request.query.tags),
       purchasable: parsePurchasable(request.query.purchasable),
       version: request.query.version,
+      mapId: parseMapId(request.query.map),
+      canonicalOnly: parseBooleanFlag(request.query.canonical, true),
     });
   });
 

@@ -1,4 +1,5 @@
 import type {
+  ChampionAbilityKit,
   ChampionListResult,
   ChampionScalingProfile,
   ChampionSummary,
@@ -48,6 +49,10 @@ export interface ListItemsParams {
   tags?: string;
   purchasable?: boolean;
   version?: string;
+  /** Riot map id; default `11` (SR). Use `all` for unfiltered. */
+  map?: string;
+  /** Default true — hide Arena/ARAM/32xxxx clones. */
+  canonical?: boolean;
 }
 
 export function fetchChampions(
@@ -83,6 +88,16 @@ export function fetchChampionScaling(
   );
 }
 
+export function fetchChampionAbilities(
+  id: string,
+  version?: string,
+): Promise<ChampionAbilityKit> {
+  const qs = version ? `?version=${encodeURIComponent(version)}` : "";
+  return request<ChampionAbilityKit>(
+    `/api/champions/${encodeURIComponent(id)}/abilities${qs}`,
+  );
+}
+
 export function fetchItems(
   params: ListItemsParams = {},
 ): Promise<ItemListResult> {
@@ -93,6 +108,11 @@ export function fetchItems(
     qs.set("purchasable", String(params.purchasable));
   }
   if (params.version?.trim()) qs.set("version", params.version.trim());
+  qs.set("map", params.map?.trim() || "11");
+  qs.set(
+    "canonical",
+    String(params.canonical === undefined ? true : params.canonical),
+  );
   const query = qs.toString();
   return request<ItemListResult>(`/api/items${query ? `?${query}` : ""}`);
 }

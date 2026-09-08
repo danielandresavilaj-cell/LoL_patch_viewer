@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   abilityHasteToCdr,
   computeBuildStats,
+  cooldownWithAbilityHaste,
   emptyProfile,
   growthFactor,
   statAtLevel,
@@ -121,6 +122,26 @@ describe("abilityHasteToCdr", () => {
   it("valores negativos o no finitos se tratan como 0", () => {
     expect(abilityHasteToCdr(-50)).toEqual({ ratio: 0, percent: 0 });
     expect(abilityHasteToCdr(Number.NaN)).toEqual({ ratio: 0, percent: 0 });
+  });
+});
+
+describe("cooldownWithAbilityHaste", () => {
+  it("sin AH el CD base no cambia", () => {
+    expect(cooldownWithAbilityHaste(10, 0)).toBe(10);
+  });
+
+  it("AH 100 reduce el CD a la mitad", () => {
+    expect(cooldownWithAbilityHaste(10, 100)).toBeCloseTo(5, 12);
+  });
+
+  it("coincide con base × (1 − ratio CDR)", () => {
+    const base = 12;
+    const ah = 50;
+    const { ratio } = abilityHasteToCdr(ah);
+    expect(cooldownWithAbilityHaste(base, ah)).toBeCloseTo(
+      base * (1 - ratio),
+      12,
+    );
   });
 });
 

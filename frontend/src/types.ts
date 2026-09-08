@@ -75,4 +75,42 @@ export interface ItemListResult {
   version: string;
   count: number;
   items: ItemSummary[];
+  mapId?: string | null;
+  canonicalOnly?: boolean;
+}
+
+export type AbilitySlot = "P" | "Q" | "W" | "E" | "R";
+
+export type AbilityDamageType =
+  | "physical"
+  | "magic"
+  | "true"
+  | "heal"
+  | "shield"
+  | "mixed"
+  | "unknown";
+
+export interface ChampionAbility {
+  slot: AbilitySlot;
+  id: string;
+  name: string;
+  description: string;
+  maxRank: number;
+  cooldowns: number[];
+  cooldownBurn: string;
+  costs: number[];
+  costBurn: string;
+  costType: string;
+  rangeBurn: string;
+  imageUrl: string;
+  damageTypes: AbilityDamageType[];
+}
+
+export interface ChampionAbilityKit {
+  championId: string;
+  name: string;
+  version: string;
+  passive: ChampionAbility;
+  spells: ChampionAbility[];
+  abilities: ChampionAbility[];
 }

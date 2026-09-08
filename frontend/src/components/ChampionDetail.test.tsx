@@ -1,25 +1,38 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import { ChampionDetail } from "./ChampionDetail";
-import { mockAhri, mockAhriScaling } from "../test/fixtures";
+import {
+  mockAhri,
+  mockAhriAbilities,
+  mockAhriScaling,
+} from "../test/fixtures";
 
 vi.mock("../api/client", () => ({
   fetchChampionScaling: vi.fn(),
+  fetchChampionAbilities: vi.fn(),
   fetchItems: vi.fn(),
 }));
 
-import { fetchChampionScaling, fetchItems } from "../api/client";
+import {
+  fetchChampionAbilities,
+  fetchChampionScaling,
+  fetchItems,
+} from "../api/client";
 
 const mockedScaling = vi.mocked(fetchChampionScaling);
+const mockedAbilities = vi.mocked(fetchChampionAbilities);
 const mockedItems = vi.mocked(fetchItems);
 
 describe("ChampionDetail", () => {
   beforeEach(() => {
     mockedScaling.mockResolvedValue(mockAhriScaling);
+    mockedAbilities.mockResolvedValue(mockAhriAbilities);
     mockedItems.mockResolvedValue({
       version: "14.1.1",
       count: 0,
       items: [],
+      mapId: "11",
+      canonicalOnly: true,
     });
   });
 
@@ -69,5 +82,12 @@ describe("ChampionDetail", () => {
     render(<ChampionDetail champion={mockAhri} />);
     expect(await screen.findByTestId("build-level-slider")).toBeInTheDocument();
     expect(mockedScaling).toHaveBeenCalledWith("Ahri", "14.1.1");
+  });
+
+  it("integra habilidades del campeón", async () => {
+    render(<ChampionDetail champion={mockAhri} />);
+    expect(await screen.findByTestId("champion-abilities")).toBeInTheDocument();
+    expect(mockedAbilities).toHaveBeenCalledWith("Ahri", "14.1.1");
+    expect(screen.getByText("Orb of Deception")).toBeInTheDocument();
   });
 });

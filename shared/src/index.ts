@@ -9,6 +9,7 @@ export type {
 export {
   abilityHasteToCdr,
   computeBuildStats,
+  cooldownWithAbilityHaste,
   emptyProfile,
   growthFactor,
   statAtLevel,

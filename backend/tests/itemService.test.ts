@@ -4,12 +4,22 @@ import {
   mapDDragonItemStats,
   enrichStatsFromDescription,
   normalizeItemStats,
+  isCanonicalItemId,
+  shouldIncludeRawItem,
   ItemService,
 } from "../src/services/itemService.js";
 import { DDragonClient } from "../src/services/ddragonClient.js";
 import { MemoryCache } from "../src/cache/memoryCache.js";
 import type { DDragonItemListResponse } from "../src/types/ddragon.js";
+import type { FlatStatMap } from "../src/types/build.js";
 import { vi } from "vitest";
+
+const srMaps = {
+  "11": true,
+  "12": true,
+  "22": false,
+  "30": false,
+};
 
 const mockItemList: DDragonItemListResponse = {
   type: "item",
@@ -32,6 +42,7 @@ const mockItemList: DDragonItemListResponse = {
       },
       gold: { base: 300, purchasable: true, total: 300, sell: 210 },
       tags: ["Boots"],
+      maps: srMaps,
       stats: { FlatMovementSpeedMod: 25 },
     },
     "3031": {
@@ -53,6 +64,7 @@ const mockItemList: DDragonItemListResponse = {
       },
       gold: { base: 725, purchasable: true, total: 3500, sell: 2450 },
       tags: ["Damage", "CriticalStrike"],
+      maps: srMaps,
       stats: { FlatCritChanceMod: 0.25, FlatPhysicalDamageMod: 75 },
     },
     "3115": {
@@ -73,6 +85,7 @@ const mockItemList: DDragonItemListResponse = {
       },
       gold: { base: 500, purchasable: true, total: 2900, sell: 2030 },
       tags: ["AttackSpeed", "OnHit", "SpellDamage"],
+      maps: srMaps,
       stats: { FlatMagicDamageMod: 80, PercentAttackSpeedMod: 0.5 },
     },
     "3020": {
@@ -93,7 +106,67 @@ const mockItemList: DDragonItemListResponse = {
       },
       gold: { base: 800, purchasable: true, total: 1100, sell: 770 },
       tags: ["Boots", "MagicPenetration"],
+      maps: srMaps,
       stats: { FlatMovementSpeedMod: 45 },
+    },
+    "8020": {
+      name: "Abyssal Mask",
+      description:
+        "<mainText><stats><attention>350</attention> Health<br><attention>50</attention> Magic Resist<br><attention>15</attention> Ability Haste</stats></mainText>",
+      plaintext: "Magic resist item",
+      from: ["3067", "1057"],
+      depth: 3,
+      image: {
+        full: "8020.png",
+        sprite: "item0.png",
+        group: "item",
+        x: 0,
+        y: 0,
+        w: 48,
+        h: 48,
+      },
+      gold: { base: 1000, purchasable: true, total: 2650, sell: 1855 },
+      tags: ["Health", "SpellBlock", "AbilityHaste"],
+      maps: srMaps,
+      stats: { FlatHPPoolMod: 350, FlatSpellBlockMod: 50 },
+    },
+    "228020": {
+      name: "Abyssal Mask",
+      description: "<mainText>Arena clone</mainText>",
+      plaintext: "Arena",
+      image: {
+        full: "228020.png",
+        sprite: "item0.png",
+        group: "item",
+        x: 0,
+        y: 0,
+        w: 48,
+        h: 48,
+      },
+      gold: { base: 2500, purchasable: true, total: 2500, sell: 1250 },
+      tags: ["Health", "SpellBlock"],
+      maps: { "11": false, "12": false, "30": true },
+      stats: { FlatHPPoolMod: 350, FlatSpellBlockMod: 50 },
+    },
+    "328020": {
+      name: "Abyssal Mask",
+      description: "<mainText>Support shop clone</mainText>",
+      plaintext: "Variant",
+      from: ["3067", "1057"],
+      depth: 3,
+      image: {
+        full: "328020.png",
+        sprite: "item0.png",
+        group: "item",
+        x: 0,
+        y: 0,
+        w: 48,
+        h: 48,
+      },
+      gold: { base: 1200, purchasable: true, total: 2850, sell: 1995 },
+      tags: ["Health", "SpellBlock"],
+      maps: { "11": true, "12": false, "30": false },
+      stats: { FlatHPPoolMod: 350, FlatSpellBlockMod: 50 },
     },
     "9999": {
       name: "Hidden Relic",
@@ -110,6 +183,7 @@ const mockItemList: DDragonItemListResponse = {
       },
       gold: { base: 0, purchasable: false, total: 0, sell: 0 },
       tags: ["Trinket"],
+      maps: srMaps,
       stats: {},
     },
   },
@@ -173,8 +247,8 @@ describe("mapDDragonItemStats", () => {
 
 describe("enrichStatsFromDescription", () => {
   it("extracts Ability Haste and Magic Penetration missing from stats object", () => {
-    const stats = { moveSpeed: 45 };
-    const percentBonuses = {};
+    const stats: FlatStatMap = { moveSpeed: 45 };
+    const percentBonuses: FlatStatMap = {};
     enrichStatsFromDescription(
       "<mainText><stats><attention>12</attention> Magic Penetration<br><attention>45</attention> Move Speed<br><attention>15</attention> Ability Haste</stats></mainText>",
       stats,
@@ -186,8 +260,8 @@ describe("enrichStatsFromDescription", () => {
   });
 
   it("does not overwrite existing flat stats", () => {
-    const stats = { attackDamage: 75 };
-    const percentBonuses = {};
+    const stats: FlatStatMap = { attackDamage: 75 };
+    const percentBonuses: FlatStatMap = {};
     enrichStatsFromDescription(
       "<stats><attention>99</attention> Attack Damage</stats>",
       stats,
@@ -209,6 +283,36 @@ describe("normalizeItemStats", () => {
   });
 });
 
+describe("canonical item filters", () => {
+  it("recognizes short numeric shop ids", () => {
+    expect(isCanonicalItemId("8020")).toBe(true);
+    expect(isCanonicalItemId("1001")).toBe(true);
+    expect(isCanonicalItemId("228020")).toBe(false);
+    expect(isCanonicalItemId("328020")).toBe(false);
+  });
+
+  it("drops Arena and 32xxxx clones when canonical+SR", () => {
+    expect(
+      shouldIncludeRawItem("8020", mockItemList.data["8020"], {
+        mapId: "11",
+        canonicalOnly: true,
+      }),
+    ).toBe(true);
+    expect(
+      shouldIncludeRawItem("228020", mockItemList.data["228020"], {
+        mapId: "11",
+        canonicalOnly: true,
+      }),
+    ).toBe(false);
+    expect(
+      shouldIncludeRawItem("328020", mockItemList.data["328020"], {
+        mapId: "11",
+        canonicalOnly: true,
+      }),
+    ).toBe(false);
+  });
+});
+
 describe("ItemService", () => {
   it("lists, filters and normalizes items", async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse(mockItemList));
@@ -219,8 +323,22 @@ describe("ItemService", () => {
     const service = new ItemService(client);
 
     const all = await service.listItems({ version: "16.17.1" });
-    expect(all.count).toBe(5);
+    expect(all.count).toBe(6);
     expect(all.version).toBe("16.17.1");
+    expect(all.mapId).toBe("11");
+    expect(all.canonicalOnly).toBe(true);
+    expect(all.items.map((i) => i.id).sort()).toEqual([
+      "1001",
+      "3020",
+      "3031",
+      "3115",
+      "8020",
+      "9999",
+    ]);
+
+    const abyssal = all.items.find((i) => i.name === "Abyssal Mask");
+    expect(abyssal?.id).toBe("8020");
+    expect(abyssal?.gold.total).toBe(2650);
 
     const boots = await service.listItems({
       version: "16.17.1",
@@ -237,6 +355,27 @@ describe("ItemService", () => {
     });
     expect(hidden.count).toBe(1);
     expect(hidden.items[0].id).toBe("9999");
+  });
+
+  it("can list non-canonical clones when requested", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(mockItemList));
+    const client = new DDragonClient({
+      cache: new MemoryCache(),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+    });
+    const service = new ItemService(client);
+
+    const raw = await service.listItems({
+      version: "16.17.1",
+      mapId: null,
+      canonicalOnly: false,
+      q: "abyssal",
+    });
+    expect(raw.items.map((i) => i.id).sort()).toEqual([
+      "228020",
+      "328020",
+      "8020",
+    ]);
   });
 
   it("returns item detail with stripped HTML and haste from description", async () => {

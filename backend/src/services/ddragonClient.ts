@@ -1,4 +1,6 @@
 import type {
+  DDragonChampionDetailRaw,
+  DDragonChampionDetailResponse,
   DDragonChampionListResponse,
   DDragonItemListResponse,
 } from "../types/ddragon.js";
@@ -10,6 +12,7 @@ export const DEFAULT_LOCALE = "en_US";
 export const VERSIONS_TTL_MS = 60 * 60 * 1000; // 1 hour
 export const CHAMPIONS_TTL_MS = 30 * 60 * 1000; // 30 minutes
 export const ITEMS_TTL_MS = 30 * 60 * 1000; // 30 minutes
+export const CHAMPION_DETAIL_TTL_MS = 30 * 60 * 1000;
 
 export class DDragonError extends Error {
   constructor(
@@ -96,12 +99,55 @@ export class DDragonClient {
     return data;
   }
 
+  /**
+   * Full champion file (`champion/{Id}.json`) — includes passive + spells.
+   */
+  async getChampionDetail(
+    championId: string,
+    version?: string,
+  ): Promise<{ version: string; champion: DDragonChampionDetailRaw }> {
+    const resolvedVersion = version ?? (await this.getLatestVersion());
+    const cacheKey = `champion-detail:${resolvedVersion}:${this.locale}:${championId}`;
+    const cached = this.cache.get<{
+      version: string;
+      champion: DDragonChampionDetailRaw;
+    }>(cacheKey);
+    if (cached) return cached;
+
+    const url = `${this.baseUrl}/cdn/${resolvedVersion}/data/${this.locale}/champion/${encodeURIComponent(championId)}.json`;
+    const data = await this.fetchJson<DDragonChampionDetailResponse>(url);
+    const champion =
+      data?.data?.[championId] ??
+      Object.values(data?.data ?? {}).find(
+        (c) => c.id.toLowerCase() === championId.toLowerCase(),
+      );
+
+    if (!champion?.spells || !champion.passive) {
+      throw new DDragonError(
+        `Invalid champion detail payload for '${championId}'`,
+        502,
+      );
+    }
+
+    const result = { version: data.version ?? resolvedVersion, champion };
+    this.cache.set(cacheKey, result, CHAMPION_DETAIL_TTL_MS);
+    return result;
+  }
+
   imageUrl(version: string, imageFull: string): string {
     return `${this.baseUrl}/cdn/${version}/img/champion/${imageFull}`;
   }
 
   itemImageUrl(version: string, imageFull: string): string {
     return `${this.baseUrl}/cdn/${version}/img/item/${imageFull}`;
+  }
+
+  spellImageUrl(version: string, imageFull: string): string {
+    return `${this.baseUrl}/cdn/${version}/img/spell/${imageFull}`;
+  }
+
+  passiveImageUrl(version: string, imageFull: string): string {
+    return `${this.baseUrl}/cdn/${version}/img/passive/${imageFull}`;
   }
 
   private async fetchJson<T>(url: string): Promise<T> {

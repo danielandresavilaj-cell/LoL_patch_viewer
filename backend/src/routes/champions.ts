@@ -47,6 +47,26 @@ export async function championsRoutes(
   app.get<{
     Params: { id: string };
     Querystring: { version?: string };
+  }>("/api/champions/:id/abilities", async (request, reply) => {
+    const { id } = request.params;
+    const kit = await championService.getChampionAbilities(
+      id,
+      request.query.version,
+    );
+
+    if (!kit) {
+      return reply.status(404).send({
+        error: `Champion '${id}' not found`,
+        statusCode: 404,
+      });
+    }
+
+    return kit;
+  });
+
+  app.get<{
+    Params: { id: string };
+    Querystring: { version?: string };
   }>("/api/champions/:id", async (request, reply) => {
     const { id } = request.params;
     const champion = await championService.getChampionById(

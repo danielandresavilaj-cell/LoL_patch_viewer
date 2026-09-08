@@ -1,4 +1,9 @@
-import type { ChampionScalingProfile, ChampionSummary, ItemSummary } from "../types";
+import type {
+  ChampionAbilityKit,
+  ChampionScalingProfile,
+  ChampionSummary,
+  ItemSummary,
+} from "../types";
 
 export const mockAhri: ChampionSummary = {
   id: "Ahri",
@@ -108,3 +113,98 @@ export const mockFiendishCodex: ItemSummary = {
   depth: 2,
   version: "14.1.1",
 };
+
+export const mockAhriAbilities: ChampionAbilityKit = {
+  championId: "Ahri",
+  name: "Ahri",
+  version: "14.1.1",
+  passive: {
+    slot: "P",
+    id: "passive",
+    name: "Essence Theft",
+    description: "After killing minions, Ahri heals.",
+    maxRank: 1,
+    cooldowns: [],
+    cooldownBurn: "",
+    costs: [],
+    costBurn: "",
+    costType: "",
+    rangeBurn: "",
+    imageUrl:
+      "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/passive/Ahri_P.png",
+    damageTypes: ["heal"],
+  },
+  spells: [
+    {
+      slot: "Q",
+      id: "AhriQ",
+      name: "Orb of Deception",
+      description: "Ahri sends out and pulls back her orb.",
+      maxRank: 5,
+      cooldowns: [7, 7, 7, 7, 7],
+      cooldownBurn: "7",
+      costs: [55, 65, 75, 85, 95],
+      costBurn: "55/65/75/85/95",
+      costType: "Mana",
+      rangeBurn: "970",
+      imageUrl:
+        "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/spell/AhriQ.png",
+      damageTypes: ["magic", "true"],
+    },
+    {
+      slot: "W",
+      id: "AhriW",
+      name: "Fox-Fire",
+      description: "Ahri releases fox-fires.",
+      maxRank: 5,
+      cooldowns: [9, 8, 7, 6, 5],
+      cooldownBurn: "9/8/7/6/5",
+      costs: [30, 30, 30, 30, 30],
+      costBurn: "30",
+      costType: "Mana",
+      rangeBurn: "700",
+      imageUrl:
+        "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/spell/AhriW.png",
+      damageTypes: ["magic"],
+    },
+    {
+      slot: "E",
+      id: "AhriE",
+      name: "Charm",
+      description: "Ahri blows a kiss that charms.",
+      maxRank: 5,
+      cooldowns: [12, 12, 12, 12, 12],
+      cooldownBurn: "12",
+      costs: [60, 60, 60, 60, 60],
+      costBurn: "60",
+      costType: "Mana",
+      rangeBurn: "975",
+      imageUrl:
+        "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/spell/AhriE.png",
+      damageTypes: ["magic"],
+    },
+    {
+      slot: "R",
+      id: "AhriR",
+      name: "Spirit Rush",
+      description: "Ahri dashes forward.",
+      maxRank: 3,
+      cooldowns: [130, 105, 80],
+      cooldownBurn: "130/105/80",
+      costs: [100, 100, 100],
+      costBurn: "100",
+      costType: "Mana",
+      rangeBurn: "450",
+      imageUrl:
+        "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/spell/AhriR.png",
+      damageTypes: ["magic"],
+    },
+  ],
+  abilities: [],
+};
+
+mockAhriAbilities.abilities = [
+  mockAhriAbilities.passive,
+  ...mockAhriAbilities.spells,
+];
+

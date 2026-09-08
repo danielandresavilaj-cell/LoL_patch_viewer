@@ -113,6 +113,21 @@ export function abilityHasteToCdr(abilityHaste: number): {
   };
 }
 
+/**
+ * Enfriamiento efectivo con Ability Haste:
+ * baseCd × 100 / (100 + AH)  ≡  baseCd × (1 − AH/(AH+100))
+ */
+export function cooldownWithAbilityHaste(
+  baseCooldown: number,
+  abilityHaste: number,
+): number {
+  if (!Number.isFinite(baseCooldown) || baseCooldown <= 0) {
+    return 0;
+  }
+  const ah = Number.isFinite(abilityHaste) ? Math.max(0, abilityHaste) : 0;
+  return baseCooldown * (100 / (100 + ah));
+}
+
 export function computeBuildStats(input: ComputeBuildInput): BuildComputedStats {
   const { profile, itemStats } = input;
   const level = clampLevel(input.level, profile.levelRange ?? { min: 1, max: 20 });

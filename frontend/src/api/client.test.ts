@@ -3,6 +3,7 @@ import {
   ApiError,
   fetchChampions,
   fetchChampion,
+  fetchChampionAbilities,
   fetchChampionScaling,
   fetchItems,
   fetchLatestPatch,
@@ -84,7 +85,21 @@ describe("api/client", () => {
       fetchItems({ q: "sword", purchasable: true }),
     ).resolves.toEqual(payload);
     expect(fetch).toHaveBeenCalledWith(
-      "/api/items?q=sword&purchasable=true",
+      "/api/items?q=sword&purchasable=true&map=11&canonical=true",
+    );
+  });
+
+  it("fetchChampionAbilities pide el kit P+QWER", async () => {
+    const payload = { championId: "Ahri", abilities: [] };
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify(payload), { status: 200 }),
+    );
+
+    await expect(fetchChampionAbilities("Ahri", "14.1.1")).resolves.toEqual(
+      payload,
+    );
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/champions/Ahri/abilities?version=14.1.1",
     );
   });
 });

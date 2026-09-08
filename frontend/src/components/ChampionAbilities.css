@@ -1,0 +1,97 @@
+.champion-abilities {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #2a3344;
+}
+
+.champion-abilities__title {
+  margin: 0 0 0.35rem;
+  font-size: 1.1rem;
+}
+
+.champion-abilities__hint,
+.champion-abilities__context {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: #9aa4b5;
+  line-height: 1.4;
+}
+
+.champion-abilities__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.champion-abilities__card {
+  padding: 0.75rem;
+  background: #121820;
+  border: 1px solid #2a3344;
+  border-radius: 6px;
+}
+
+.champion-abilities__head {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.champion-abilities__head img {
+  border-radius: 4px;
+  background: #0b0f14;
+}
+
+.champion-abilities__slot {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #7dd3fc;
+  letter-spacing: 0.04em;
+}
+
+.champion-abilities__head h4 {
+  margin: 0.1rem 0;
+  font-size: 1rem;
+}
+
+.champion-abilities__types {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #9aa4b5;
+}
+
+.champion-abilities__desc {
+  margin: 0.6rem 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.champion-abilities__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.champion-abilities__meta label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.champion-abilities__meta input[type="number"] {
+  width: 3.2rem;
+  padding: 0.2rem 0.35rem;
+  background: #0b0f14;
+  border: 1px solid #2a3344;
+  color: inherit;
+  border-radius: 4px;
+}
+
+.champion-abilities__meta p {
+  margin: 0;
+}
