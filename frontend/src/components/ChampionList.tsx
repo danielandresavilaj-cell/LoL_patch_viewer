@@ -14,12 +14,17 @@ export function ChampionList({
   selectedId,
   onSelect,
   loading = false,
-  emptyMessage = "No hay campeones que coincidan.",
+  emptyMessage = "Ningún campeón coincide",
 }: ChampionListProps) {
   if (loading) {
     return (
       <div className="champion-list" role="status" aria-live="polite">
         <p className="champion-list__status">Cargando campeones…</p>
+        <div className="champion-list__skeletons" aria-hidden="true">
+          {Array.from({ length: 8 }, (_, i) => (
+            <div key={i} className="champion-list__skeleton" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -52,8 +57,8 @@ export function ChampionList({
                 className="champion-list__avatar"
                 src={champion.imageUrl}
                 alt=""
-                width={48}
-                height={48}
+                width={40}
+                height={40}
                 loading="lazy"
               />
               <span className="champion-list__meta">

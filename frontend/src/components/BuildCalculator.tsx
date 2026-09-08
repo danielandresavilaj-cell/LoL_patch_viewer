@@ -4,6 +4,7 @@ import {
   useMemo,
   useState,
   type ChangeEvent,
+  type ReactNode,
 } from "react";
 import {
   computeBuildStats,
@@ -20,23 +21,41 @@ import "./BuildCalculator.css";
 
 const SLOT_COUNT = 6;
 
-const STAT_ROWS: Array<{ key: FlatStatKey; label: string }> = [
-  { key: "hp", label: "Vida" },
-  { key: "mp", label: "Maná" },
-  { key: "attackDamage", label: "Daño" },
-  { key: "abilityPower", label: "Poder de habilidad" },
-  { key: "armor", label: "Armadura" },
-  { key: "spellBlock", label: "Resistencia mágica" },
-  { key: "attackSpeed", label: "Vel. de ataque" },
-  { key: "moveSpeed", label: "Vel. de movimiento" },
-  { key: "crit", label: "Crítico" },
-  { key: "hpRegen", label: "Regen. vida" },
-  { key: "mpRegen", label: "Regen. maná" },
-  { key: "abilityHaste", label: "Aceleración de habilidad" },
-  { key: "armorPen", label: "Pen. armadura" },
-  { key: "magicPen", label: "Pen. mágica" },
-  { key: "lifesteal", label: "Robo de vida" },
-  { key: "spellVamp", label: "Vampirismo de hechizo" },
+const STAT_GROUPS: Array<{
+  label: string;
+  rows: Array<{ key: FlatStatKey; label: string }>;
+}> = [
+  {
+    label: "Ofensiva",
+    rows: [
+      { key: "attackDamage", label: "Daño" },
+      { key: "abilityPower", label: "Poder de habilidad" },
+      { key: "attackSpeed", label: "Vel. de ataque" },
+      { key: "crit", label: "Crítico" },
+      { key: "armorPen", label: "Pen. armadura" },
+      { key: "magicPen", label: "Pen. mágica" },
+      { key: "lifesteal", label: "Robo de vida" },
+      { key: "spellVamp", label: "Vampirismo de hechizo" },
+    ],
+  },
+  {
+    label: "Defensiva",
+    rows: [
+      { key: "hp", label: "Vida" },
+      { key: "armor", label: "Armadura" },
+      { key: "spellBlock", label: "Resistencia mágica" },
+      { key: "hpRegen", label: "Regen. vida" },
+    ],
+  },
+  {
+    label: "Utilidad",
+    rows: [
+      { key: "mp", label: "Maná" },
+      { key: "mpRegen", label: "Regen. maná" },
+      { key: "moveSpeed", label: "Vel. de movimiento" },
+      { key: "abilityHaste", label: "Aceleración de habilidad" },
+    ],
+  },
 ];
 
 export interface BuildCalculatorProps {
@@ -138,6 +157,20 @@ export function BuildCalculator({
     };
   }, [activeSlot, debouncedItemQuery, version]);
 
+  useEffect(() => {
+    if (activeSlot === null) return;
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setActiveSlot(null);
+        setItemQuery("");
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [activeSlot]);
+
   const equipped = useMemo(
     () => slots.filter((slot): slot is ItemSummary => slot !== null),
     [slots],
@@ -202,8 +235,10 @@ export function BuildCalculator({
   if (profileLoading) {
     return (
       <section className="build-calculator" aria-busy="true">
-        <h3 className="build-calculator__title">Calculadora de build</h3>
-        <p className="build-calculator__hint">Cargando perfil de escalado…</p>
+        <div className="build-calculator__controls">
+          <h3 className="build-calculator__title">Calculadora de build</h3>
+          <p className="build-calculator__hint">Cargando perfil de escalado…</p>
+        </div>
       </section>
     );
   }
@@ -211,126 +246,190 @@ export function BuildCalculator({
   if (profileError || !profile || !computed) {
     return (
       <section className="build-calculator" role="alert">
-        <h3 className="build-calculator__title">Calculadora de build</h3>
-        <p className="build-calculator__hint">
-          {profileError ?? "Perfil de escalado no disponible"}
-        </p>
+        <div className="build-calculator__controls">
+          <h3 className="build-calculator__title">Calculadora de build</h3>
+          <p className="build-calculator__hint">
+            {profileError ?? "Perfil de escalado no disponible"}
+          </p>
+        </div>
       </section>
     );
   }
+
+  const levelFill = ((level - minLevel) / Math.max(1, maxLevel - minLevel)) * 100;
 
   return (
     <section
       className="build-calculator"
       aria-label={`Calculadora de build de ${profile.name}`}
     >
-      <h3 className="build-calculator__title">Calculadora de build</h3>
+      <div className="build-calculator__controls">
+        <h3 className="build-calculator__title">Calculadora de build</h3>
 
-      <div className="build-calculator__level">
-        <label htmlFor="build-level-slider">
-          Nivel <strong data-testid="build-level-value">{level}</strong>
-        </label>
-        <input
-          id="build-level-slider"
-          data-testid="build-level-slider"
-          type="range"
-          min={minLevel}
-          max={maxLevel}
-          step={1}
-          value={level}
-          onChange={handleLevelChange}
-          aria-valuemin={minLevel}
-          aria-valuemax={maxLevel}
-          aria-valuenow={level}
-        />
-        <input
-          data-testid="build-level-input"
-          type="number"
-          min={minLevel}
-          max={maxLevel}
-          value={level}
-          onChange={handleLevelChange}
-          aria-label="Nivel numérico"
-        />
-      </div>
+        <div className="build-calculator__level">
+          <label htmlFor="build-level-slider" className="build-calculator__level-label">
+            Nivel{" "}
+            <strong data-testid="build-level-value">{level}</strong>
+          </label>
+          <input
+            id="build-level-slider"
+            data-testid="build-level-slider"
+            type="range"
+            min={minLevel}
+            max={maxLevel}
+            step={1}
+            value={level}
+            onChange={handleLevelChange}
+            aria-valuemin={minLevel}
+            aria-valuemax={maxLevel}
+            aria-valuenow={level}
+            style={{
+              background: `linear-gradient(90deg, var(--accent) ${levelFill}%, var(--bg-elevated) ${levelFill}%)`,
+            }}
+          />
+          <input
+            data-testid="build-level-input"
+            type="number"
+            min={minLevel}
+            max={maxLevel}
+            value={level}
+            onChange={handleLevelChange}
+            aria-label="Nivel numérico"
+          />
+        </div>
 
-      <div className="build-calculator__inventory" aria-label="Inventario">
-        {slots.map((slot, index) => (
-          <div key={index} className="build-calculator__slot-wrap">
-            <button
-              type="button"
-              className={
-                slot
-                  ? "build-calculator__slot build-calculator__slot--filled"
-                  : "build-calculator__slot"
-              }
-              onClick={() => openPicker(index)}
-              aria-label={
-                slot
-                  ? `Cambiar ítem en ranura ${index + 1}: ${slot.name}`
-                  : `Elegir ítem en ranura ${index + 1}`
-              }
-              data-testid={`build-slot-${index}`}
-            >
-              {slot ? (
-                <img src={slot.imageUrl} alt="" width={40} height={40} />
-              ) : (
-                <span aria-hidden="true">+</span>
-              )}
-            </button>
-            {slot ? (
-              <button
-                type="button"
-                className="build-calculator__slot-clear"
-                onClick={() => clearSlot(index)}
-                aria-label={`Quitar ${slot.name} de la ranura ${index + 1}`}
-                data-testid={`build-slot-clear-${index}`}
-              >
-                ×
-              </button>
-            ) : null}
-          </div>
-        ))}
-      </div>
+        <div className="build-calculator__inventory" aria-label="Inventario">
+          {slots.map((slot, index) => {
+            const isActive = activeSlot === index;
+            const slotClass = [
+              "build-calculator__slot",
+              slot ? "build-calculator__slot--filled" : "",
+              isActive ? "build-calculator__slot--active" : "",
+            ]
+              .filter(Boolean)
+              .join(" ");
 
-      <dl className="build-calculator__stats" data-testid="build-stats">
-        {STAT_ROWS.map(({ key, label }) => {
-          const fromChamp = computed.fromLevel[key] ?? 0;
-          const fromItems = computed.fromItems[key] ?? 0;
-          const total = computed.total[key] ?? 0;
-          if (fromChamp === 0 && fromItems === 0 && total === 0) {
-            return null;
-          }
-          return (
-            <div key={key} className="build-calculator__stat" data-stat={key}>
-              <dt>{label}</dt>
-              <dd>
-                <span data-testid={`stat-${key}-champ`}>
-                  {formatStat(fromChamp)}
-                </span>
-                {fromItems !== 0 ? (
-                  <span
-                    className="build-calculator__item-bonus"
-                    data-testid={`stat-${key}-items`}
+            return (
+              <div key={index} className="build-calculator__slot-wrap">
+                <button
+                  type="button"
+                  className={slotClass}
+                  onClick={() => openPicker(index)}
+                  title={
+                    slot
+                      ? `${slot.name} · ${slot.gold.total}g`
+                      : `Ranura ${index + 1} vacía`
+                  }
+                  aria-label={
+                    slot
+                      ? `Cambiar ítem en ranura ${index + 1}: ${slot.name}`
+                      : `Elegir ítem en ranura ${index + 1}`
+                  }
+                  data-testid={`build-slot-${index}`}
+                >
+                  {slot ? (
+                    <>
+                      <img src={slot.imageUrl} alt="" width={40} height={40} />
+                      <span className="build-calculator__slot-overlay" aria-hidden="true">
+                        Cambiar
+                      </span>
+                    </>
+                  ) : (
+                    <span aria-hidden="true">+</span>
+                  )}
+                </button>
+                {slot ? (
+                  <button
+                    type="button"
+                    className="build-calculator__slot-clear"
+                    onClick={() => clearSlot(index)}
+                    aria-label={`Quitar ${slot.name} de la ranura ${index + 1}`}
+                    data-testid={`build-slot-clear-${index}`}
                   >
-                    {" "}
-                    + {formatStat(fromItems)}
-                  </span>
+                    ×
+                  </button>
                 ) : null}
-                <span className="build-calculator__total">
-                  {" "}
-                  = {formatStat(total)}
-                </span>
-              </dd>
-            </div>
-          );
-        })}
-      </dl>
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
-      <p className="build-calculator__cdr" data-testid="build-cdr">
-        AH {formatStat(computed.abilityHaste)} → CDR{" "}
-        <strong>{formatStat(computed.cooldownReduction.percent)}%</strong>
-      </p>
+      <div className="build-calculator__results">
+        <table className="build-calculator__stats" data-testid="build-stats">
+          <thead>
+            <tr>
+              <th scope="col">Stat</th>
+              <th scope="col">Campeón</th>
+              <th scope="col">Ítems</th>
+              <th scope="col">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {STAT_GROUPS.map((group) => {
+              const visibleRows = group.rows.filter(({ key }) => {
+                const fromChamp = computed.fromLevel[key] ?? 0;
+                const fromItems = computed.fromItems[key] ?? 0;
+                const total = computed.total[key] ?? 0;
+                return !(fromChamp === 0 && fromItems === 0 && total === 0);
+              });
+              if (visibleRows.length === 0) return null;
+              return (
+                <FragmentGroup key={group.label} label={group.label}>
+                  {visibleRows.map(({ key, label }) => {
+                    const fromChamp = computed.fromLevel[key] ?? 0;
+                    const fromItems = computed.fromItems[key] ?? 0;
+                    const total = computed.total[key] ?? 0;
+                    return (
+                      <tr
+                        key={key}
+                        className="build-calculator__stat"
+                        data-stat={key}
+                      >
+                        <th scope="row">{label}</th>
+                        <td
+                          className="build-calculator__stat-base"
+                          data-testid={`stat-${key}-champ`}
+                        >
+                          {formatStat(fromChamp)}
+                        </td>
+                        <td
+                          className={
+                            fromItems !== 0
+                              ? "build-calculator__item-bonus"
+                              : "build-calculator__stat-empty"
+                          }
+                          data-testid={
+                            fromItems !== 0 ? `stat-${key}-items` : undefined
+                          }
+                        >
+                          {fromItems !== 0
+                            ? `+ ${formatStat(fromItems)}`
+                            : "—"}
+                        </td>
+                        <td className="build-calculator__total">
+                          = {formatStat(total)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </FragmentGroup>
+              );
+            })}
+          </tbody>
+        </table>
+
+        <p className="build-calculator__cdr" data-testid="build-cdr">
+          <span>
+            AH <strong>{formatStat(computed.abilityHaste)}</strong>
+          </span>
+          <span className="build-calculator__cdr-sep">→</span>
+          <span>
+            CDR efectivo{" "}
+            <strong>{formatStat(computed.cooldownReduction.percent)}%</strong>
+          </span>
+        </p>
+      </div>
 
       {activeSlot !== null ? (
         <div
@@ -339,6 +438,9 @@ export function BuildCalculator({
           aria-modal="true"
           aria-label="Selector de ítems"
           data-testid="item-picker"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) closePicker();
+          }}
         >
           <div className="build-calculator__modal-panel">
             <header className="build-calculator__modal-header">
@@ -354,15 +456,20 @@ export function BuildCalculator({
               placeholder="Buscar ítem…"
               aria-label="Buscar ítem"
               data-testid="item-search"
+              className="build-calculator__item-search"
             />
             {catalogError ? (
-              <p role="alert">{catalogError}</p>
+              <p className="build-calculator__hint" role="alert">
+                {catalogError}
+              </p>
             ) : catalogLoading ? (
-              <p>Cargando ítems…</p>
+              <p className="build-calculator__hint">Cargando ítems…</p>
             ) : (
               <ul className="build-calculator__item-list">
                 {catalog.length === 0 ? (
-                  <li>Sin resultados</li>
+                  <li className="build-calculator__item-empty">
+                    Sin resultados para esta búsqueda
+                  </li>
                 ) : (
                   catalog.slice(0, 40).map((item) => (
                     <li key={item.id}>
@@ -391,5 +498,22 @@ export function BuildCalculator({
         </div>
       ) : null}
     </section>
+  );
+}
+
+function FragmentGroup({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <>
+      <tr className="build-calculator__group">
+        <th colSpan={4}>{label}</th>
+      </tr>
+      {children}
+    </>
   );
 }

@@ -119,7 +119,7 @@ describe("BuildCalculator", () => {
 
     await waitFor(() => {
       expect(screen.getByTestId("build-cdr")).toHaveTextContent("AH 10");
-      expect(screen.getByTestId("build-cdr")).toHaveTextContent("CDR 9.09%");
+      expect(screen.getByTestId("build-cdr")).toHaveTextContent(/CDR.*9\.09%/);
     });
   });
 

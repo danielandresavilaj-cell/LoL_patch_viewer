@@ -130,11 +130,20 @@ export function ChampionAbilities({
       {(buildStats?.attackDamage !== undefined ||
         buildStats?.abilityPower !== undefined ||
         buildStats?.hp !== undefined) && (
-        <p className="champion-abilities__context" data-testid="ability-build-context">
-          Stats de build: AD {Math.round(buildStats.attackDamage ?? 0)} · AP{" "}
-          {Math.round(buildStats.abilityPower ?? 0)} · HP{" "}
-          {Math.round(buildStats.hp ?? 0)}
-        </p>
+        <div
+          className="champion-abilities__context"
+          data-testid="ability-build-context"
+        >
+          <span className="champion-abilities__chip">
+            AD {Math.round(buildStats.attackDamage ?? 0)}
+          </span>
+          <span className="champion-abilities__chip">
+            AP {Math.round(buildStats.abilityPower ?? 0)}
+          </span>
+          <span className="champion-abilities__chip">
+            HP {Math.round(buildStats.hp ?? 0)}
+          </span>
+        </div>
       )}
 
       <ul className="champion-abilities__list">
@@ -190,13 +199,19 @@ export function ChampionAbilities({
                   /{ability.maxRank}
                 </label>
                 <p data-testid={`ability-cd-${ability.slot}`}>
-                  CD {formatCd(baseCd)}
                   {abilityHaste > 0 ? (
                     <>
-                      {" "}
-                      → <strong>{formatCd(effectiveCd)}</strong>
+                      <span className="champion-abilities__cd-base">
+                        CD {formatCd(baseCd)}
+                      </span>{" "}
+                      →{" "}
+                      <strong className="champion-abilities__cd-effective">
+                        {formatCd(effectiveCd)}
+                      </strong>
                     </>
-                  ) : null}
+                  ) : (
+                    <>CD {formatCd(baseCd)}</>
+                  )}
                 </p>
                 {ability.costBurn ? (
                   <p>Coste {ability.costBurn}</p>

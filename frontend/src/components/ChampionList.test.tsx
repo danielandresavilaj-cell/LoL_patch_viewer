@@ -14,7 +14,7 @@ describe("ChampionList", () => {
 
   it("muestra mensaje vacío", () => {
     render(<ChampionList champions={[]} onSelect={() => undefined} />);
-    expect(screen.getByText(/no hay campeones/i)).toBeInTheDocument();
+    expect(screen.getByText(/ningún campeón coincide/i)).toBeInTheDocument();
   });
 
   it("renderiza nombres y títulos de campeones", () => {

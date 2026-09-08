@@ -16,6 +16,7 @@ export default function App() {
   const [selected, setSelected] = useState<ChampionSummary | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [patch, setPatch] = useState<PatchLatest | null>(null);
+  const [railOpen, setRailOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -58,6 +59,7 @@ export default function App() {
 
   async function handleSelect(champion: ChampionSummary) {
     setSelected(champion);
+    setRailOpen(false);
     setDetailLoading(true);
     try {
       const detail = await fetchChampion(champion.id, champion.version);
@@ -72,45 +74,74 @@ export default function App() {
   return (
     <div className="app">
       <div className="app__atmosphere" aria-hidden="true" />
-      <header className="app__hero">
+
+      <header className="app__topbar">
         <p className="app__brand">LoL Champion &amp; Patch Viewer</p>
-        <h1 className="app__headline">Encuentra stats por parche</h1>
-        <p className="app__lede">
-          Busca campeones Data Dragon y consulta estadísticas del parche activo.
-        </p>
-        {patch ? (
-          <p className="app__patch" data-testid="patch-banner">
-            Parche actual <strong>{patch.version}</strong>
-            {patch.previous ? (
-              <>
-                {" "}
-                · anterior <strong>{patch.previous}</strong>
-              </>
-            ) : null}
-          </p>
-        ) : null}
-        <SearchBar value={query} onChange={setQuery} />
+        <div className="app__topbar-actions">
+          {patch ? (
+            <p className="app__patch" data-testid="patch-banner">
+              Parche <strong>{patch.version}</strong>
+              {patch.previous ? (
+                <>
+                  {" "}
+                  · ant. <strong>{patch.previous}</strong>
+                </>
+              ) : null}
+            </p>
+          ) : null}
+          <button
+            type="button"
+            className="app__rail-toggle"
+            aria-expanded={railOpen}
+            aria-controls="champion-rail"
+            onClick={() => setRailOpen((open) => !open)}
+          >
+            Campeones
+          </button>
+        </div>
       </header>
 
-      <main className="app__main">
-        <section className="app__panel" aria-label="Resultados">
-          {listError ? (
-            <p className="app__error" role="alert">
-              {listError}
+      <div className="app__shell">
+        {railOpen ? (
+          <button
+            type="button"
+            className="app__backdrop"
+            aria-label="Cerrar lista de campeones"
+            onClick={() => setRailOpen(false)}
+          />
+        ) : null}
+
+        <aside
+          id="champion-rail"
+          className={railOpen ? "app__rail app__rail--open" : "app__rail"}
+          aria-label="Buscar campeones"
+        >
+          <SearchBar value={query} onChange={setQuery} />
+          {!listLoading && !listError ? (
+            <p className="app__rail-meta">
+              {champions.length} campeón{champions.length === 1 ? "" : "es"}
             </p>
-          ) : (
-            <ChampionList
-              champions={champions}
-              selectedId={selected?.id}
-              onSelect={handleSelect}
-              loading={listLoading}
-            />
-          )}
-        </section>
-        <aside className="app__panel app__panel--detail">
-          <ChampionDetail champion={selected} loading={detailLoading} />
+          ) : null}
+          <div className="app__rail-list">
+            {listError ? (
+              <p className="app__error" role="alert">
+                {listError}
+              </p>
+            ) : (
+              <ChampionList
+                champions={champions}
+                selectedId={selected?.id}
+                onSelect={handleSelect}
+                loading={listLoading}
+              />
+            )}
+          </div>
         </aside>
-      </main>
+
+        <main className="app__stage">
+          <ChampionDetail champion={selected} loading={detailLoading} />
+        </main>
+      </div>
     </div>
   );
 }

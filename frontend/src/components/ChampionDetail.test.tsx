@@ -58,7 +58,7 @@ describe("ChampionDetail", () => {
     expect(
       screen.getByRole("heading", { name: "Ahri", level: 2 }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/parche 14\.1\.1/i)).toBeInTheDocument();
+    expect(screen.getByText(/v14\.1\.1/i)).toBeInTheDocument();
     expect(screen.getByText(/spirit realm/i)).toBeInTheDocument();
     expect(screen.getByText("HP")).toBeInTheDocument();
     expect(screen.getByText("590")).toBeInTheDocument();

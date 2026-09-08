@@ -2,7 +2,7 @@
 
 **Alcance:** refactor visual y de layout del frontend (sin cambiar contratos API ni el motor `shared/buildMath`).  
 **Stack visual:** React + CSS puro con variables en `:root` (sin MUI/Bootstrap).  
-**Estado:** propuesta — esperando luz verde antes de implementar.
+**Estado:** implementado (refactor frontend Forge Dark).
 
 ---
 
