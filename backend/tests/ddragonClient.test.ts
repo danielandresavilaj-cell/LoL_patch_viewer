@@ -4,9 +4,13 @@ import {
   DDragonError,
   VERSIONS_TTL_MS,
   CHAMPIONS_TTL_MS,
+  ITEMS_TTL_MS,
 } from "../src/services/ddragonClient.js";
 import { MemoryCache } from "../src/cache/memoryCache.js";
-import type { DDragonChampionListResponse } from "../src/types/ddragon.js";
+import type {
+  DDragonChampionListResponse,
+  DDragonItemListResponse,
+} from "../src/types/ddragon.js";
 
 const mockVersions = ["16.17.1", "16.16.1", "16.15.1"];
 
@@ -137,7 +141,10 @@ describe("DDragonClient", () => {
   });
 
   it("builds CDN image URLs", () => {
-    const client = new DDragonClient({ cache, fetchImpl: fetchMock as unknown as typeof fetch });
+    const client = new DDragonClient({
+      cache,
+      fetchImpl: fetchMock as unknown as typeof fetch,
+    });
     expect(client.imageUrl("16.17.1", "Ahri.png")).toBe(
       "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Ahri.png",
     );
@@ -165,8 +172,63 @@ describe("DDragonClient", () => {
     });
   });
 
+  it("fetches and caches item list for a version", async () => {
+    const mockItemList: DDragonItemListResponse = {
+      type: "item",
+      version: "16.17.1",
+      data: {
+        "1001": {
+          name: "Boots",
+          description: "<stats><attention>25</attention> Move Speed</stats>",
+          plaintext: "MS",
+          image: {
+            full: "1001.png",
+            sprite: "item0.png",
+            group: "item",
+            x: 0,
+            y: 0,
+            w: 48,
+            h: 48,
+          },
+          gold: { base: 300, purchasable: true, total: 300, sell: 210 },
+          tags: ["Boots"],
+          stats: { FlatMovementSpeedMod: 25 },
+        },
+      },
+    };
+    fetchMock.mockResolvedValueOnce(jsonResponse(mockItemList));
+
+    const client = new DDragonClient({
+      cache,
+      fetchImpl: fetchMock as unknown as typeof fetch,
+    });
+
+    const first = await client.getItemList("16.17.1");
+    const second = await client.getItemList("16.17.1");
+
+    expect(first.version).toBe("16.17.1");
+    expect(Object.keys(first.data)).toEqual(["1001"]);
+    expect(second).toEqual(first);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      "https://ddragon.leagueoflegends.com/cdn/16.17.1/data/en_US/item.json",
+    );
+    expect(cache.has("items:16.17.1:en_US")).toBe(true);
+  });
+
+  it("builds CDN item image URLs", () => {
+    const client = new DDragonClient({
+      cache,
+      fetchImpl: fetchMock as unknown as typeof fetch,
+    });
+    expect(client.itemImageUrl("16.17.1", "3115.png")).toBe(
+      "https://ddragon.leagueoflegends.com/cdn/16.17.1/img/item/3115.png",
+    );
+  });
+
   it("exposes TTL constants used for caching", () => {
     expect(VERSIONS_TTL_MS).toBe(3_600_000);
     expect(CHAMPIONS_TTL_MS).toBe(1_800_000);
+    expect(ITEMS_TTL_MS).toBe(1_800_000);
   });
 });

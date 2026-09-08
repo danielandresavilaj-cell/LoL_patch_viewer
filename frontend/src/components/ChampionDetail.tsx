@@ -1,4 +1,5 @@
 import type { ChampionSummary } from "../types";
+import { BuildCalculator } from "./BuildCalculator";
 import "./ChampionDetail.css";
 
 const STAT_LABELS: Array<{ key: string; label: string }> = [
@@ -101,6 +102,8 @@ export function ChampionDetail({
           );
         })}
       </dl>
+
+      <BuildCalculator championId={champion.id} version={champion.version} />
     </section>
   );
 }

@@ -3,6 +3,8 @@ import {
   ApiError,
   fetchChampions,
   fetchChampion,
+  fetchChampionScaling,
+  fetchItems,
   fetchLatestPatch,
 } from "./client";
 
@@ -56,5 +58,33 @@ describe("api/client", () => {
 
     await expect(fetchLatestPatch()).resolves.toEqual(payload);
     expect(fetch).toHaveBeenCalledWith("/api/patches/latest");
+  });
+
+  it("fetchChampionScaling pide el perfil de escalado", async () => {
+    const payload = { id: "Ahri", name: "Ahri", version: "14.1.1" };
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify(payload), { status: 200 }),
+    );
+
+    await expect(fetchChampionScaling("Ahri", "14.1.1")).resolves.toEqual(
+      payload,
+    );
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/champions/Ahri/scaling?version=14.1.1",
+    );
+  });
+
+  it("fetchItems construye filtros de catálogo", async () => {
+    const payload = { version: "14.1.1", count: 0, items: [] };
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify(payload), { status: 200 }),
+    );
+
+    await expect(
+      fetchItems({ q: "sword", purchasable: true }),
+    ).resolves.toEqual(payload);
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/items?q=sword&purchasable=true",
+    );
   });
 });

@@ -5,14 +5,18 @@
   "description": "LoL Champion & Patch Viewer – monorepo",
   "workspaces": [
     "backend",
-    "frontend"
+    "frontend",
+    "shared"
   ],
   "scripts": {
     "test": "npm run test --workspaces --if-present",
-    "test:backend": "npm run test --workspace=backend",
-    "test:frontend": "npm run test --workspace=frontend",
+    "test:all": "npm run test --workspace=@lol-viewer/backend && npm run test --workspace=@lol-viewer/shared && npm run test --workspace=@lol-viewer/frontend",
+    "test:backend": "npm run test --workspace=@lol-viewer/backend",
+    "test:frontend": "npm run test --workspace=@lol-viewer/frontend",
+    "test:shared": "npm run test --workspace=@lol-viewer/shared",
     "build:backend": "npm run build --workspace=backend",
     "build:frontend": "npm run build --workspace=frontend",
+    "build:shared": "npm run build --workspace=@lol-viewer/shared",
     "dev:backend": "npm run dev --workspace=backend",
     "dev:frontend": "npm run dev --workspace=frontend"
   }

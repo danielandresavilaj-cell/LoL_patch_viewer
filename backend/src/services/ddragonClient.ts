@@ -1,4 +1,7 @@
-import type { DDragonChampionListResponse } from "../types/ddragon.js";
+import type {
+  DDragonChampionListResponse,
+  DDragonItemListResponse,
+} from "../types/ddragon.js";
 import { MemoryCache } from "../cache/memoryCache.js";
 
 export const DDRAGON_BASE = "https://ddragon.leagueoflegends.com";
@@ -6,6 +9,7 @@ export const DEFAULT_LOCALE = "en_US";
 
 export const VERSIONS_TTL_MS = 60 * 60 * 1000; // 1 hour
 export const CHAMPIONS_TTL_MS = 30 * 60 * 1000; // 30 minutes
+export const ITEMS_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
 export class DDragonError extends Error {
   constructor(
@@ -77,8 +81,27 @@ export class DDragonClient {
     return data;
   }
 
+  async getItemList(version?: string): Promise<DDragonItemListResponse> {
+    const resolvedVersion = version ?? (await this.getLatestVersion());
+    const cacheKey = `items:${resolvedVersion}:${this.locale}`;
+    const cached = this.cache.get<DDragonItemListResponse>(cacheKey);
+    if (cached) return cached;
+
+    const url = `${this.baseUrl}/cdn/${resolvedVersion}/data/${this.locale}/item.json`;
+    const data = await this.fetchJson<DDragonItemListResponse>(url);
+    if (!data?.data || typeof data.data !== "object") {
+      throw new DDragonError("Invalid item list payload from Data Dragon", 502);
+    }
+    this.cache.set(cacheKey, data, ITEMS_TTL_MS);
+    return data;
+  }
+
   imageUrl(version: string, imageFull: string): string {
     return `${this.baseUrl}/cdn/${version}/img/champion/${imageFull}`;
+  }
+
+  itemImageUrl(version: string, imageFull: string): string {
+    return `${this.baseUrl}/cdn/${version}/img/item/${imageFull}`;
   }
 
   private async fetchJson<T>(url: string): Promise<T> {

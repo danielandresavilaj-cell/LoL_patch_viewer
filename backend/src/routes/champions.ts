@@ -27,6 +27,26 @@ export async function championsRoutes(
   app.get<{
     Params: { id: string };
     Querystring: { version?: string };
+  }>("/api/champions/:id/scaling", async (request, reply) => {
+    const { id } = request.params;
+    const profile = await championService.getChampionScaling(
+      id,
+      request.query.version,
+    );
+
+    if (!profile) {
+      return reply.status(404).send({
+        error: `Champion '${id}' not found`,
+        statusCode: 404,
+      });
+    }
+
+    return profile;
+  });
+
+  app.get<{
+    Params: { id: string };
+    Querystring: { version?: string };
   }>("/api/champions/:id", async (request, reply) => {
     const { id } = request.params;
     const champion = await championService.getChampionById(

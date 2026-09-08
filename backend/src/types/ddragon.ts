@@ -52,3 +52,38 @@ export interface ChampionListResult {
   count: number;
   champions: ChampionSummary[];
 }
+
+/** Raw Data Dragon item entry (subset we rely on). */
+export interface DDragonItemRaw {
+  name: string;
+  description: string;
+  colloq?: string;
+  plaintext: string;
+  into?: string[];
+  from?: string[];
+  depth?: number;
+  image: {
+    full: string;
+    sprite: string;
+    group: string;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  };
+  gold: {
+    base: number;
+    purchasable: boolean;
+    total: number;
+    sell: number;
+  };
+  tags: string[];
+  maps?: Record<string, boolean>;
+  stats: Record<string, number>;
+}
+
+export interface DDragonItemListResponse {
+  type: string;
+  version: string;
+  data: Record<string, DDragonItemRaw>;
+}

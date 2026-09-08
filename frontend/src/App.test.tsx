@@ -8,17 +8,24 @@ vi.mock("./api/client", () => ({
   fetchLatestPatch: vi.fn(),
   fetchChampions: vi.fn(),
   fetchChampion: vi.fn(),
+  fetchChampionScaling: vi.fn(),
+  fetchItems: vi.fn(),
 }));
 
 import {
   fetchLatestPatch,
   fetchChampions,
   fetchChampion,
+  fetchChampionScaling,
+  fetchItems,
 } from "./api/client";
+import { mockAhriScaling, mockLongSword } from "./test/fixtures";
 
 const mockedPatch = vi.mocked(fetchLatestPatch);
 const mockedList = vi.mocked(fetchChampions);
 const mockedDetail = vi.mocked(fetchChampion);
+const mockedScaling = vi.mocked(fetchChampionScaling);
+const mockedItems = vi.mocked(fetchItems);
 
 describe("App", () => {
   beforeEach(() => {
@@ -33,6 +40,12 @@ describe("App", () => {
       champions: [mockAhri, mockGaren],
     });
     mockedDetail.mockResolvedValue(mockAhri);
+    mockedScaling.mockResolvedValue(mockAhriScaling);
+    mockedItems.mockResolvedValue({
+      version: "14.1.1",
+      count: 1,
+      items: [mockLongSword],
+    });
   });
 
   afterEach(() => {

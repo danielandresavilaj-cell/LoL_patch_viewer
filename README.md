@@ -1,15 +1,42 @@
 # LoL Champion & Patch Viewer
 
-Monorepo TypeScript: Fastify BFF + React/Vite.
+Monorepo TypeScript: Fastify BFF + React/Vite + motor matemático `@lol-viewer/shared`.
 
-## Estado
+## Qué incluye
 
-- **Fase 0–1:** scaffold, cliente Data Dragon, caché TTL, normalización
-- **Fase 2:** API REST completa con manejo de errores (404 / 502 / 504)
-- **Fase 3:** frontend React (buscador, lista, detalle, Vitest)
-- **Fase 4:** Docker Compose (`api` + `web` + red `lol-viewer-net`)
+- Buscador de campeones y detalle con stats base
+- Parches / versiones vía Data Dragon
+- **Calculadora de Builds**: hasta 6 ítems, nivel 1–20, stats en tiempo real y CDR desde Ability Haste
+
+## Calculadora de Builds
+
+En el detalle de un campeón aparece la calculadora:
+
+1. Eliges el **nivel** (slider o input, 1–20).
+2. Rellenas hasta **6 slots** de ítems (modal con `GET /api/items`).
+3. Las stats se recalculan en el cliente con `computeBuildStats` (`@lol-viewer/shared`).
+
+### Fórmulas
+
+Crecimiento no lineal (Riot):
+
+```text
+stat(level) = base + growth × (level − 1) × (0.7025 + 0.0175 × (level − 1))
+```
+
+Ability Haste → reducción de enfriamiento:
+
+```text
+CDR% = 100 × AH / (AH + 100)
+```
+
+v1 suma solo **mods planos** de ítems. Los porcentuales se muestran en el DTO como informativos y no se aplican al total.
+
+El backend normaliza `item.json` (strip HTML, mapeo de stats) y expone el perfil de escalado; el slider no hace roundtrip por tick.
 
 ## Docker
+
+Los builds usan el **contexto en la raíz del monorepo** para que `frontend` (y el workspace) puedan resolver `@lol-viewer/shared`.
 
 ```bash
 cd lol-champion-patch-viewer
@@ -17,7 +44,12 @@ docker compose up --build
 # UI: http://localhost:8080  (nginx proxy /api y /health → api:3001)
 ```
 
-Servicios en la red bridge interna `lol-viewer-net`: el browser solo habla con `web:80`; nginx reenvía `/api/*` y `/health` al servicio `api` (puerto 3001, no publicado al host).
+| Servicio | Imagen | Red |
+|----------|--------|-----|
+| `api` | `backend/Dockerfile` (context `.`) | `lol-viewer-net`, solo `expose: 3001` |
+| `web` | `frontend/Dockerfile` (context `.`) + `nginx.conf` | `8080:80` al host |
+
+Flujo: browser → `localhost:8080` → nginx (`web`) → `api:3001` → Data Dragon.
 
 ## API
 
@@ -28,19 +60,35 @@ Servicios en la red bridge interna `lol-viewer-net`: el browser solo habla con `
 | GET | `/api/patches/latest` | Parche actual + anterior |
 | GET | `/api/champions?q=&tags=&version=` | Lista filtrada |
 | GET | `/api/champions/:id?version=` | Detalle de campeón |
+| GET | `/api/champions/:id/scaling` | Base + growth para la calculadora |
+| GET | `/api/items?q=&tags=&purchasable=&version=` | Catálogo de ítems |
+| GET | `/api/items/:id` | Detalle de ítem |
 
 ## Desarrollo
 
 ```bash
 cd lol-champion-patch-viewer
 npm install
+npm run test                 # backend + shared + frontend
 npm run test:backend
+npm run test:shared
 npm run test:frontend
-cd backend && npm run dev   # :3001
-cd frontend && npm run dev  # :5173 (proxy /api → backend)
+npm run dev:backend          # :3001
+npm run dev:frontend         # :5173 (proxy /api → backend)
 ```
 
-Variable opcional del frontend: `VITE_API_URL` (vacío en dev = mismo origen vía proxy Vite).
+Variable opcional del frontend: `VITE_API_URL` (vacío = mismo origen vía proxy Vite o nginx).
+
+## Estructura
+
+```text
+lol-champion-patch-viewer/
+├── backend/     # Fastify BFF + Data Dragon
+├── frontend/    # React/Vite + BuildCalculator
+├── shared/      # buildMath puro (curva Riot, AH→CDR, computeBuildStats)
+├── docker-compose.yml
+└── package.json # workspaces npm
+```
 
 ## Data Dragon
 
@@ -48,3 +96,4 @@ Sin autenticación. Endpoints usados:
 
 - `https://ddragon.leagueoflegends.com/api/versions.json`
 - `https://ddragon.leagueoflegends.com/cdn/{version}/data/en_US/champion.json`
+- `https://ddragon.leagueoflegends.com/cdn/{version}/data/en_US/item.json`

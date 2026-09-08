@@ -1,4 +1,4 @@
-import type { ChampionSummary } from "../types";
+import type { ChampionScalingProfile, ChampionSummary, ItemSummary } from "../types";
 
 export const mockAhri: ChampionSummary = {
   id: "Ahri",
@@ -44,5 +44,67 @@ export const mockGaren: ChampionSummary = {
   },
   imageUrl:
     "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/champion/Garen.png",
+  version: "14.1.1",
+};
+
+export const mockAhriScaling: ChampionScalingProfile = {
+  id: "Ahri",
+  name: "Ahri",
+  version: "14.1.1",
+  imageUrl: mockAhri.imageUrl,
+  base: {
+    hp: 590,
+    mp: 418,
+    armor: 21,
+    spellBlock: 30,
+    attackDamage: 53,
+    attackSpeed: 0.668,
+    moveSpeed: 330,
+    crit: 0,
+    hpRegen: 2.5,
+    mpRegen: 8,
+  },
+  perLevel: {
+    hp: 104,
+    mp: 25,
+    armor: 4.7,
+    spellBlock: 1.3,
+    attackDamage: 3,
+    attackSpeed: 2,
+    hpRegen: 0.6,
+    mpRegen: 0.8,
+  },
+  levelRange: { min: 1, max: 20 },
+};
+
+export const mockLongSword: ItemSummary = {
+  id: "1036",
+  name: "Long Sword",
+  plaintext: "Slightly increases Attack Damage",
+  descriptionText: "+10 Attack Damage",
+  imageUrl: "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/item/1036.png",
+  gold: { base: 350, total: 350, sell: 245, purchasable: true },
+  tags: ["Damage"],
+  stats: { attackDamage: 10 },
+  percentBonuses: {},
+  from: [],
+  into: ["3133"],
+  depth: 1,
+  version: "14.1.1",
+};
+
+export const mockFiendishCodex: ItemSummary = {
+  id: "3108",
+  name: "Fiendish Codex",
+  plaintext: "Increases Ability Power and Ability Haste",
+  descriptionText: "+25 Ability Power +10 Ability Haste",
+  imageUrl: "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/item/3108.png",
+  gold: { base: 400, total: 900, sell: 630, purchasable: true },
+  tags: ["SpellDamage", "CooldownReduction"],
+  stats: { abilityPower: 25, abilityHaste: 10 },
+  percentBonuses: {},
+  from: ["1052"],
+  into: ["3115"],
+  depth: 2,
   version: "14.1.1",
 };

@@ -3,12 +3,70 @@ import type {
   ChampionSummary,
   DDragonChampionRaw,
 } from "../types/ddragon.js";
+import type { ChampionScalingProfile, FlatStatMap } from "../types/build.js";
 import { DDragonClient } from "./ddragonClient.js";
+
+export const DEFAULT_LEVEL_RANGE = { min: 1, max: 20 } as const;
 
 export interface ListChampionsQuery {
   q?: string;
   tags?: string[];
   version?: string;
+}
+
+function num(stats: Record<string, number>, key: string, fallback = 0): number {
+  const value = stats[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+export function toScalingProfile(
+  champion: DDragonChampionRaw,
+  version: string,
+  imageUrl: string,
+): ChampionScalingProfile {
+  const s = champion.stats ?? {};
+
+  const base: ChampionScalingProfile["base"] = {
+    hp: num(s, "hp"),
+    mp: num(s, "mp"),
+    armor: num(s, "armor"),
+    spellBlock: num(s, "spellblock"),
+    attackDamage: num(s, "attackdamage"),
+    attackSpeed: num(s, "attackspeed"),
+    moveSpeed: num(s, "movespeed"),
+    crit: num(s, "crit"),
+    hpRegen: num(s, "hpregen"),
+    mpRegen: num(s, "mpregen"),
+  };
+
+  const perLevel: FlatStatMap = {};
+  const perLevelPairs: Array<[keyof FlatStatMap, string]> = [
+    ["hp", "hpperlevel"],
+    ["mp", "mpperlevel"],
+    ["armor", "armorperlevel"],
+    ["spellBlock", "spellblockperlevel"],
+    ["attackDamage", "attackdamageperlevel"],
+    ["attackSpeed", "attackspeedperlevel"],
+    ["crit", "critperlevel"],
+    ["hpRegen", "hpregenperlevel"],
+    ["mpRegen", "mpregenperlevel"],
+  ];
+
+  for (const [key, rawKey] of perLevelPairs) {
+    if (rawKey in s) {
+      perLevel[key] = num(s, rawKey);
+    }
+  }
+
+  return {
+    id: champion.id,
+    name: champion.name,
+    version,
+    imageUrl,
+    base,
+    perLevel,
+    levelRange: { ...DEFAULT_LEVEL_RANGE },
+  };
 }
 
 export class ChampionService {
@@ -52,12 +110,36 @@ export class ChampionService {
     id: string,
     version?: string,
   ): Promise<ChampionSummary | undefined> {
-    const raw = await this.client.getChampionList(version);
-    const entry = raw.data[id] ?? Object.values(raw.data).find(
-      (c) => c.id.toLowerCase() === id.toLowerCase(),
-    );
+    const entry = await this.findChampion(id, version);
     if (!entry) return undefined;
-    return this.toSummary(entry, raw.version);
+    return this.toSummary(entry.champion, entry.version);
+  }
+
+  async getChampionScaling(
+    id: string,
+    version?: string,
+  ): Promise<ChampionScalingProfile | undefined> {
+    const entry = await this.findChampion(id, version);
+    if (!entry) return undefined;
+    return toScalingProfile(
+      entry.champion,
+      entry.version,
+      this.client.imageUrl(entry.version, entry.champion.image.full),
+    );
+  }
+
+  private async findChampion(
+    id: string,
+    version?: string,
+  ): Promise<{ champion: DDragonChampionRaw; version: string } | undefined> {
+    const raw = await this.client.getChampionList(version);
+    const entry =
+      raw.data[id] ??
+      Object.values(raw.data).find(
+        (c) => c.id.toLowerCase() === id.toLowerCase(),
+      );
+    if (!entry) return undefined;
+    return { champion: entry, version: raw.version };
   }
 
   private toSummary(

@@ -1,3 +1,7 @@
+import type { FlatStatMap } from "@lol-viewer/shared";
+
+export type { FlatStatKey, FlatStatMap, BuildComputedStats } from "@lol-viewer/shared";
+
 export interface ChampionInfo {
   attack: number;
   defense: number;
@@ -34,4 +38,41 @@ export interface PatchLatest {
 export interface ApiErrorBody {
   error: string;
   statusCode: number;
+}
+
+export interface ChampionScalingProfile {
+  id: string;
+  name: string;
+  version: string;
+  imageUrl: string;
+  base: FlatStatMap;
+  perLevel: FlatStatMap;
+  levelRange: { min: number; max: number };
+}
+
+export interface ItemSummary {
+  id: string;
+  name: string;
+  plaintext: string;
+  descriptionText: string;
+  imageUrl: string;
+  gold: {
+    base: number;
+    total: number;
+    sell: number;
+    purchasable: boolean;
+  };
+  tags: string[];
+  stats: FlatStatMap;
+  percentBonuses: FlatStatMap;
+  from: string[];
+  into: string[];
+  depth: number;
+  version: string;
+}
+
+export interface ItemListResult {
+  version: string;
+  count: number;
+  items: ItemSummary[];
 }

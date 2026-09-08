@@ -1,6 +1,9 @@
 import type {
   ChampionListResult,
+  ChampionScalingProfile,
   ChampionSummary,
+  ItemListResult,
+  ItemSummary,
   PatchLatest,
 } from "../types";
 
@@ -40,6 +43,13 @@ export interface ListChampionsParams {
   version?: string;
 }
 
+export interface ListItemsParams {
+  q?: string;
+  tags?: string;
+  purchasable?: boolean;
+  version?: string;
+}
+
 export function fetchChampions(
   params: ListChampionsParams = {},
 ): Promise<ChampionListResult> {
@@ -60,6 +70,37 @@ export function fetchChampion(
   const qs = version ? `?version=${encodeURIComponent(version)}` : "";
   return request<ChampionSummary>(
     `/api/champions/${encodeURIComponent(id)}${qs}`,
+  );
+}
+
+export function fetchChampionScaling(
+  id: string,
+  version?: string,
+): Promise<ChampionScalingProfile> {
+  const qs = version ? `?version=${encodeURIComponent(version)}` : "";
+  return request<ChampionScalingProfile>(
+    `/api/champions/${encodeURIComponent(id)}/scaling${qs}`,
+  );
+}
+
+export function fetchItems(
+  params: ListItemsParams = {},
+): Promise<ItemListResult> {
+  const qs = new URLSearchParams();
+  if (params.q?.trim()) qs.set("q", params.q.trim());
+  if (params.tags?.trim()) qs.set("tags", params.tags.trim());
+  if (params.purchasable !== undefined) {
+    qs.set("purchasable", String(params.purchasable));
+  }
+  if (params.version?.trim()) qs.set("version", params.version.trim());
+  const query = qs.toString();
+  return request<ItemListResult>(`/api/items${query ? `?${query}` : ""}`);
+}
+
+export function fetchItem(id: string, version?: string): Promise<ItemSummary> {
+  const qs = version ? `?version=${encodeURIComponent(version)}` : "";
+  return request<ItemSummary>(
+    `/api/items/${encodeURIComponent(id)}${qs}`,
   );
 }
 
